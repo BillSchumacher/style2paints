@@ -34,8 +34,7 @@ def binarize(x):
 
 
 def get_initial_fillmap(boundary, merge=True):
-    fillmap = build_fill_map(boundary, flood_fill_multi(boundary, merge=merge))
-    return fillmap
+    return build_fill_map(boundary, flood_fill_multi(boundary, merge=merge))
 
 
 def up_propagate(small_fillmap, big_boundary):
@@ -70,8 +69,7 @@ def laplas_fill(b_512, b_256, b_128):
     f128 = get_initial_fillmap(b_128)
     f256 = up_propagate(f128, b_256)
     f512 = up_propagate(f256, b_512)
-    fin = thinning(f512)
-    return fin
+    return thinning(f512)
 
 
 @ njit
@@ -181,9 +179,9 @@ def double_fill(b_1024, b_512, b256):
 def single_fill(b_2048, path):
     b_2048 = corners(binarize(b_2048))
     f2048 = get_initial_fillmap(b_2048, merge=False)
-    print(path + 'get_initial_fillmap(b_2048, merge=False)')
+    print(f'{path}get_initial_fillmap(b_2048, merge=False)')
     fin = thinning(f2048)
-    print(path + 'thinning(f2048)')
+    print(f'{path}thinning(f2048)')
     # cv2.imwrite(path + 'b_2048.png', b_2048)
     # save_fill(path + 'f2048.png', f2048)
     # save_fill(path + 'fin.png', fin)
@@ -301,7 +299,7 @@ def fuse_sketch(color, sketch, fills, fixer, points_arr, colors_arr):
     fill_id = np.unique(fills.flatten())
     bg = np.zeros_like(color, dtype=np.uint8)
     checking_result = np.zeros(dtype=np.int32, shape=(np.max(fills) + 1,)) - 1
-    length_points = int(len(points_arr))
+    length_points = len(points_arr)
     for _ in range(length_points):
         checking_result[fills[points_arr[_][0], points_arr[_][1]]] = _
     for id in fill_id:
@@ -327,7 +325,7 @@ def balance_fill(color, fills, points, sizer):
             region_points = region_points[region_points[:, 3] > 0]
             if region_points.shape[0] > 0:
                 points_color, points_color_count = np.unique(region_points, return_counts=True, axis=0)
-                bg[region] = points_color[np.argmax(points_color_count)][0:3]
+                bg[region] = points_color[np.argmax(points_color_count)][:3]
             else:
                 bg[region] = np.median(color[region], axis=0)
     return bg
@@ -343,7 +341,7 @@ def shade_fill(color, fills, points, sizer):
             region_points = region_points[region_points[:, 3] > 0]
             if region_points.shape[0] > 0:
                 points_color, points_color_count = np.unique(region_points, return_counts=True, axis=0)
-                c = points_color[np.argmax(points_color_count)][0:3]
+                c = points_color[np.argmax(points_color_count)][:3]
                 r = c[0]
                 g = c[1]
                 b = c[2]

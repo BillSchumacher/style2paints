@@ -11,8 +11,12 @@ for f in ['baby.net', 'head.net', 'neck.net', 'tail.net', 'reader.net', 'girder.
         exit(1)
 
 if len(sys.argv) <= 2:
-    print('Usage: %s <imagefile> <outputfile> [colorization|rendering|recolorization] [x y color x y color ...]' % sys.argv[0])
-    print('Example: %s sketch.jpg colorized.jpg colorization 0.5 0.25 77ee00 0.5 0.75 0011cc' % sys.argv[0])
+    print(
+        f'Usage: {sys.argv[0]} <imagefile> <outputfile> [colorization|rendering|recolorization] [x y color x y color ...]'
+    )
+    print(
+        f'Example: {sys.argv[0]} sketch.jpg colorized.jpg colorization 0.5 0.25 77ee00 0.5 0.75 0011cc'
+    )
     exit(1)
 
 
@@ -46,17 +50,17 @@ def get_request_image(fname):
 def handle_sketch_upload_pool():
     room, sketch, method = sketch_upload_pool[0]
     del sketch_upload_pool[0]
-    room_path = 'game/rooms/' + room
-    print('processing sketch in ' + room_path)
+    room_path = f'game/rooms/{room}'
+    print(f'processing sketch in {room_path}')
     improved_sketch = sketch.copy()
     improved_sketch = min_resize(improved_sketch, 512)
     improved_sketch = cv_denoise(improved_sketch)
     improved_sketch = sensitive(improved_sketch, s=5.0)
     improved_sketch = go_tail(improved_sketch)
-    cv2.imwrite(room_path + '/sketch.improved.jpg', improved_sketch)
+    cv2.imwrite(f'{room_path}/sketch.improved.jpg', improved_sketch)
     color_sketch = improved_sketch.copy()
     std = cal_std(color_sketch)
-    print('std = ' + str(std))
+    print(f'std = {str(std)}')
     need_de_painting = (std > 100.0) and method == 'rendering'
     if method=='recolorization' or need_de_painting:
         improved_sketch = go_passline(color_sketch)
@@ -64,24 +68,35 @@ def handle_sketch_upload_pool():
         improved_sketch = cv_denoise(improved_sketch)
         improved_sketch = go_tail(improved_sketch)
         improved_sketch = sensitive(improved_sketch, s=5.0)
-        cv2.imwrite(room_path + '/sketch.recolorization.jpg', min_black(improved_sketch))
+        cv2.imwrite(
+            f'{room_path}/sketch.recolorization.jpg',
+            min_black(improved_sketch),
+        )
         if need_de_painting:
-            cv2.imwrite(room_path + '/sketch.de_painting.jpg', min_black(improved_sketch))
+            cv2.imwrite(f'{room_path}/sketch.de_painting.jpg', min_black(improved_sketch))
             print('In rendering mode, the user has uploaded a painting, and I have translated it into a sketch.')
         print('sketch lined')
-    cv2.imwrite(room_path + '/sketch.colorization.jpg', min_black(color_sketch))
-    cv2.imwrite(room_path + '/sketch.rendering.jpg', eye_black(color_sketch))
+    cv2.imwrite(f'{room_path}/sketch.colorization.jpg', min_black(color_sketch))
+    cv2.imwrite(f'{room_path}/sketch.rendering.jpg', eye_black(color_sketch))
     print('sketch improved')
 
 
 def handle_painting_pool():
     room, ID, sketch, alpha, reference, points, method, lineColor, line = painting_pool[0]
     del painting_pool[0]
-    room_path = 'game/rooms/' + room
-    print('processing painting in ' + room_path)
+    room_path = f'game/rooms/{room}'
+    print(f'processing painting in {room_path}')
     sketch_1024 = k_resize(sketch, 64)
-    if os.path.exists(room_path + '/sketch.de_painting.jpg') and method == 'rendering':
-        vice_sketch_1024 = k_resize(cv2.imread(room_path + '/sketch.de_painting.jpg', cv2.IMREAD_GRAYSCALE), 64)
+    if (
+        os.path.exists(f'{room_path}/sketch.de_painting.jpg')
+        and method == 'rendering'
+    ):
+        vice_sketch_1024 = k_resize(
+            cv2.imread(
+                f'{room_path}/sketch.de_painting.jpg', cv2.IMREAD_GRAYSCALE
+            ),
+            64,
+        )
         sketch_256 = mini_norm(k_resize(min_k_down(vice_sketch_1024, 2), 16))
         sketch_128 = hard_norm(sk_resize(min_k_down(vice_sketch_1024, 4), 32))
     else:
@@ -89,8 +104,8 @@ def handle_painting_pool():
         sketch_128 = hard_norm(sk_resize(min_k_down(sketch_1024, 4), 32))
     print('sketch prepared')
     if debugging:
-        cv2.imwrite(room_path + '/sketch.128.jpg', sketch_128)
-        cv2.imwrite(room_path + '/sketch.256.jpg', sketch_256)
+        cv2.imwrite(f'{room_path}/sketch.128.jpg', sketch_128)
+        cv2.imwrite(f'{room_path}/sketch.256.jpg', sketch_256)
     baby = go_baby(sketch_128, opreate_normal_hint(ini_hint(sketch_128), points, type=0, length=1))
     baby = de_line(baby, sketch_128)
     for _ in range(16):
@@ -98,18 +113,18 @@ def handle_painting_pool():
     baby = go_tail(baby)
     baby = clip_15(baby)
     if debugging:
-        cv2.imwrite(room_path + '/baby.' + ID + '.jpg', baby)
+        cv2.imwrite(f'{room_path}/baby.{ID}.jpg', baby)
     print('baby born')
     composition = go_gird(sketch=sketch_256, latent=d_resize(baby, sketch_256.shape), hint=ini_hint(sketch_256))
     if line:
         composition = emph_line(composition, d_resize(min_k_down(sketch_1024, 2), composition.shape), lineColor)
     composition = go_tail(composition)
-    cv2.imwrite(room_path + '/composition.' + ID + '.jpg', composition)
+    cv2.imwrite(f'{room_path}/composition.{ID}.jpg', composition)
     print('composition saved')
     painting_function = go_head
     if method == 'rendering':
         painting_function = go_neck
-    print('method: ' + method)
+    print(f'method: {method}')
     result = painting_function(
         sketch=sketch_1024,
         global_hint=k_resize(composition, 14),
@@ -118,38 +133,38 @@ def handle_painting_pool():
         alpha=(1 - alpha) if reference is not None else 1
     )
     result = go_tail(result)
-    cv2.imwrite(room_path + '/result.' + ID + '.jpg', result)
+    cv2.imwrite(f'{room_path}/result.{ID}.jpg', result)
     if debugging:
-        cv2.imwrite(room_path + '/icon.' + ID + '.jpg', max_resize(result, 128))
-    return room_path + '/result.' + ID + '.jpg'
+        cv2.imwrite(f'{room_path}/icon.{ID}.jpg', max_resize(result, 128))
+    return f'{room_path}/result.{ID}.jpg'
 
 
 def upload_sketch(inputfilename, method):
     ID = datetime.datetime.now().strftime('H%HM%MS%S')
     room = datetime.datetime.now().strftime('%b%dH%HM%MS%S') + 'R' + str(np.random.randint(100, 999))
-    room_path = 'game/rooms/' + room
+    room_path = f'game/rooms/{room}'
     os.makedirs(room_path, exist_ok=True)
     sketch = from_png_to_jpg(get_request_image(inputfilename))
-    cv2.imwrite(room_path + '/sketch.original.jpg', sketch)
+    cv2.imwrite(f'{room_path}/sketch.original.jpg', sketch)
     print('original_sketch saved')
-    print('sketch upload pool get request: ' + method)
+    print(f'sketch upload pool get request: {method}')
     sketch_upload_pool.append((room, sketch, method))
     return room
 
 
 def request_result(room, method, points):
     ID = datetime.datetime.now().strftime('H%HM%MS%S')
-    room_path = 'game/rooms/' + room
+    room_path = f'game/rooms/{room}'
     if debugging:
-        with open(room_path + '/options.' + ID + '.json', 'w') as f:
+        with open(f'{room_path}/options.{ID}.json', 'w') as f:
             f.write(options_str)
     options = json.loads(options_str)
-    sketch = cv2.imread(room_path + '/sketch.' + method + '.jpg', cv2.IMREAD_GRAYSCALE)
+    sketch = cv2.imread(f'{room_path}/sketch.{method}.jpg', cv2.IMREAD_GRAYSCALE)
     alpha = float(options["alpha"])
     for _ in range(len(points)):
         points[_][1] = 1 - points[_][1]
     reference = None
-    print('request result room = ' + str(room) + ', ID = ' + str(ID))
+    print(f'request result room = {str(room)}, ID = {str(ID)}')
     lineColor = np.array(options["lineColor"])
     line = options["line"]
     painting_pool.append([room, ID, sketch, alpha, reference, points, method, lineColor, line])
@@ -165,7 +180,7 @@ while len(sys.argv) > i:
     x = float(sys.argv[i])
     y = float(sys.argv[i+1])
     h = sys.argv[i+2]
-    r = int(h[0:2], 16)
+    r = int(h[:2], 16)
     g = int(h[2:4], 16)
     b = int(h[4:6], 16)
     points.append([x, y, r, g, b, 0])

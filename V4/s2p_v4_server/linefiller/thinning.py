@@ -35,9 +35,9 @@ def njit_thin(points, maps):
 
 def thinning(fillmap, max_iter=100):
     result = fillmap.copy()
-    for iterNum in range(max_iter):
+    for _ in range(max_iter):
         line_points = np.where(result == 0)
-        if not len(line_points[0]) > 0:
+        if len(line_points[0]) <= 0:
             break
         result = njit_thin(line_points, result)
     return result

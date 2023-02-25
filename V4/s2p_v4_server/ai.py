@@ -87,8 +87,9 @@ print('5')
 
 head = load_model('./nets/head.net')
 feed = [1 - ip1 / 255.0, (ip4[:, :, :, 0:3] / 127.5 - 1) * ip4[:, :, :, 3:4] / 255.0]
-for _ in range(len(features)):
-    feed.append(keras.backend.mean(features[_], axis=[1, 2]))
+feed.extend(
+    keras.backend.mean(features[_], axis=[1, 2]) for _ in range(len(features))
+)
 nil0, nil1, head_temp = head(feed)
 
 print('6')

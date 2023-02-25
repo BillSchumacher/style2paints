@@ -9,74 +9,62 @@ def from_png_to_jpg(map):
     color = map[:, :, 0:3].astype(np.float) / 255.0
     alpha = map[:, :, 3:4].astype(np.float) / 255.0
     reversed_color = 1 - color
-    final_color = (255.0 - reversed_color * alpha * 255.0).clip(0,255).astype(np.uint8)
-    return final_color
+    return (255.0 - reversed_color * alpha * 255.0).clip(0,255).astype(np.uint8)
 
 
 def k_resize(x, k):
     if x.shape[0] < x.shape[1]:
         s0 = k
         s1 = int(x.shape[1] * (k / x.shape[0]))
-        s1 = s1 - s1 % 64
+        s1 -= s1 % 64
         _s0 = 16 * s0
         _s1 = int(x.shape[1] * (_s0 / x.shape[0]))
         _s1 = (_s1 + 32) - (_s1 + 32) % 64
     else:
         s1 = k
         s0 = int(x.shape[0] * (k / x.shape[1]))
-        s0 = s0 - s0 % 64
+        s0 -= s0 % 64
         _s1 = 16 * s1
         _s0 = int(x.shape[0] * (_s1 / x.shape[1]))
         _s0 = (_s0 + 32) - (_s0 + 32) % 64
     new_min = min(_s1, _s0)
     raw_min = min(x.shape[0], x.shape[1])
-    if new_min < raw_min:
-        interpolation = cv2.INTER_AREA
-    else:
-        interpolation = cv2.INTER_LANCZOS4
-    y = cv2.resize(x, (_s1, _s0), interpolation=interpolation)
-    return y
+    interpolation = cv2.INTER_AREA if new_min < raw_min else cv2.INTER_LANCZOS4
+    return cv2.resize(x, (_s1, _s0), interpolation=interpolation)
 
 
 def sk_resize(x, k):
     if x.shape[0] < x.shape[1]:
         s0 = k
         s1 = int(x.shape[1] * (k / x.shape[0]))
-        s1 = s1 - s1 % 16
+        s1 -= s1 % 16
         _s0 = 4 * s0
         _s1 = int(x.shape[1] * (_s0 / x.shape[0]))
         _s1 = (_s1 + 8) - (_s1 + 8) % 16
     else:
         s1 = k
         s0 = int(x.shape[0] * (k / x.shape[1]))
-        s0 = s0 - s0 % 16
+        s0 -= s0 % 16
         _s1 = 4 * s1
         _s0 = int(x.shape[0] * (_s1 / x.shape[1]))
         _s0 = (_s0 + 8) - (_s0 + 8) % 16
     new_min = min(_s1, _s0)
     raw_min = min(x.shape[0], x.shape[1])
-    if new_min < raw_min:
-        interpolation = cv2.INTER_AREA
-    else:
-        interpolation = cv2.INTER_LANCZOS4
-    y = cv2.resize(x, (_s1, _s0), interpolation=interpolation)
-    return y
+    interpolation = cv2.INTER_AREA if new_min < raw_min else cv2.INTER_LANCZOS4
+    return cv2.resize(x, (_s1, _s0), interpolation=interpolation)
 
 
 def d_resize(x, d, fac=1.0):
     new_min = min(int(d[1] * fac), int(d[0] * fac))
     raw_min = min(x.shape[0], x.shape[1])
-    if new_min < raw_min:
-        interpolation = cv2.INTER_AREA
-    else:
-        interpolation = cv2.INTER_LANCZOS4
-    y = cv2.resize(x, (int(d[1] * fac), int(d[0] * fac)), interpolation=interpolation)
-    return y
+    interpolation = cv2.INTER_AREA if new_min < raw_min else cv2.INTER_LANCZOS4
+    return cv2.resize(
+        x, (int(d[1] * fac), int(d[0] * fac)), interpolation=interpolation
+    )
 
 
 def n_resize(x, d):
-    y = cv2.resize(x, (d[1], d[0]), interpolation=cv2.INTER_NEAREST)
-    return y
+    return cv2.resize(x, (d[1], d[0]), interpolation=cv2.INTER_NEAREST)
 
 
 def s_resize(x, s):
@@ -88,12 +76,8 @@ def s_resize(x, s):
         s0 = int(float(s1) / float(s[1]) * float(s[0]))
     new_max = max(s1, s0)
     raw_max = max(x.shape[0], x.shape[1])
-    if new_max < raw_max:
-        interpolation = cv2.INTER_AREA
-    else:
-        interpolation = cv2.INTER_LANCZOS4
-    y = cv2.resize(x, (s1, s0), interpolation=interpolation)
-    return y
+    interpolation = cv2.INTER_AREA if new_max < raw_max else cv2.INTER_LANCZOS4
+    return cv2.resize(x, (s1, s0), interpolation=interpolation)
 
 
 def min_resize(x, m):
@@ -105,12 +89,8 @@ def min_resize(x, m):
         s1 = m
     new_max = max(s1, s0)
     raw_max = max(x.shape[0], x.shape[1])
-    if new_max < raw_max:
-        interpolation = cv2.INTER_AREA
-    else:
-        interpolation = cv2.INTER_LANCZOS4
-    y = cv2.resize(x, (s1, s0), interpolation=interpolation)
-    return y
+    interpolation = cv2.INTER_AREA if new_max < raw_max else cv2.INTER_LANCZOS4
+    return cv2.resize(x, (s1, s0), interpolation=interpolation)
 
 
 def max_resize(x, m):
@@ -122,12 +102,8 @@ def max_resize(x, m):
         s1 = m
     new_max = max(s1, s0)
     raw_max = max(x.shape[0], x.shape[1])
-    if new_max < raw_max:
-        interpolation = cv2.INTER_AREA
-    else:
-        interpolation = cv2.INTER_LANCZOS4
-    y = cv2.resize(x, (s1, s0), interpolation=interpolation)
-    return y
+    interpolation = cv2.INTER_AREA if new_max < raw_max else cv2.INTER_LANCZOS4
+    return cv2.resize(x, (s1, s0), interpolation=interpolation)
 
 
 def s_enhance(x, k=2.0):
@@ -138,8 +114,7 @@ def s_enhance(x, k=2.0):
 
 
 def ini_hint(x):
-    r = np.zeros(shape=(x.shape[0], x.shape[1], 4), dtype=np.float32)
-    return r
+    return np.zeros(shape=(x.shape[0], x.shape[1], 4), dtype=np.float32)
 
 
 def opreate_gird_hint(gird, points, type, length):

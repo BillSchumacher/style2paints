@@ -5,12 +5,8 @@ import cv2
 from keras.models import load_model
 from config import *
 
-if productive:
-    strg0 = '/gpu:0'
-    strg1 = '/gpu:1'
-else:
-    strg0 = '/gpu:0'
-    strg1 = '/gpu:0'
+strg1 = '/gpu:1' if productive else '/gpu:0'
+strg0 = '/gpu:0'
 
 
 def ToGray(x):
@@ -76,11 +72,8 @@ with tf.device(strg1):
     p_ip3 = ip3 / 255.0
     p_ip4 = (ip4[:, :, :, 0:3] / 127.5 - 1) * ip4[:, :, :, 3:4] / 255.0
     features = base_reader(p_ip3)
-    feed = []
-    feed.append(p_ip1)
-    feed.append(p_ip4)
-    for item in features:
-        feed.append(keras.backend.mean(item, axis=[1, 2]))
+    feed = [p_ip1, p_ip4]
+    feed.extend(keras.backend.mean(item, axis=[1, 2]) for item in features)
     nil0, nil1, base_head_temp = base_head(feed)
     nil2, nil3, base_neck_temp = base_neck(feed)
     base_head_temp = (base_head_temp + [103.939, 116.779, 123.68])[:, :, :, ::-1] / 255.0

@@ -38,10 +38,10 @@ def upload_sketch():
     timenow = time.time()
     ID = datetime.datetime.now().strftime('H%HM%MS%S')
     room = datetime.datetime.now().strftime('%b%dH%HM%MS%S') + 'R' + str(np.random.randint(100, 999))
-    room_path = 'game/rooms/' + room
+    room_path = f'game/rooms/{room}'
     os.makedirs(room_path, exist_ok=True)
     sketch = from_png_to_jpg(get_request_image('sketch'))
-    cv2.imwrite(room_path + '/sketch.original.jpg', sketch)
+    cv2.imwrite(f'{room_path}/sketch.original.jpg', sketch)
     sketch = go_tail(cli_norm(min_resize(sketch, 512)))
     print('original_sketch saved')
     s256 = go_vector(go_cal(mk_resize(sketch, 8)))[:, :, 0]
@@ -50,18 +50,18 @@ def upload_sketch():
     print('s512')
     s1024 = go_vector(go_cal(d_resize(sketch, s256.shape, 4.0)))[:, :, 0]
     print('s1024')
-    cv2.imwrite(room_path + '/sketch.s1024.png', s1024)
-    cv2.imwrite(room_path + '/sketch.s512.png', s512)
-    cv2.imwrite(room_path + '/sketch.s256.png', s256)
+    cv2.imwrite(f'{room_path}/sketch.s1024.png', s1024)
+    cv2.imwrite(f'{room_path}/sketch.s512.png', s512)
+    cv2.imwrite(f'{room_path}/sketch.s256.png', s256)
     print('edge processed')
     fill = double_fill(s1024, s512, s256)
-    with gzip.open(room_path + '/sketch.fill', 'wb') as fp:
+    with gzip.open(f'{room_path}/sketch.fill', 'wb') as fp:
         pickle.dump(fill, fp)
     print('filled')
-    cv2.imwrite(room_path + '/sketch.colorization.png', np.min(sketch, axis=2))
+    cv2.imwrite(f'{room_path}/sketch.colorization.png', np.min(sketch, axis=2))
     print('sketch processed')
     print(time.time() - timenow)
-    return room + '_' + ID
+    return f'{room}_{ID}'
 
 
 @route('/request_v2_result', method='POST')
