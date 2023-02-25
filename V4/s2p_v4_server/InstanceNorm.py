@@ -78,11 +78,7 @@ class InstanceNormalization(Layer):
 
         self.input_spec = InputSpec(ndim=ndim)
 
-        if self.axis is None:
-            shape = (1,)
-        else:
-            shape = (input_shape[self.axis],)
-
+        shape = (1, ) if self.axis is None else (input_shape[self.axis], )
         if self.scale:
             self.gamma = self.add_weight(shape=shape,
                                          name='gamma',
@@ -103,7 +99,7 @@ class InstanceNormalization(Layer):
 
     def call(self, inputs, training=None):
         input_shape = K.int_shape(inputs)
-        reduction_axes = list(range(0, len(input_shape)))
+        reduction_axes = list(range(len(input_shape)))
 
         if (self.axis is not None):
             del reduction_axes[self.axis]

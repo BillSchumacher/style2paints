@@ -89,8 +89,13 @@ def make_diff_net():
         return LeakyReLU(alpha=0.1)(x)
 
     def r_block(x, filters, name=None):
-        return relu(conv(relu(conv(x, filters, None if name is None else name + '_c1')), filters,
-                         None if name is None else name + '_c2'))
+        return relu(
+            conv(
+                relu(conv(x, filters, None if name is None else f'{name}_c1')),
+                filters,
+                None if name is None else f'{name}_c2',
+            )
+        )
 
     def cat(a, b):
         return Concatenate()([UpSampling2D((2, 2))(a), b])

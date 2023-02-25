@@ -47,10 +47,10 @@ def handle_sketch_upload_pool():
     if len(sketch_upload_pool) > 0:
         room, sketch, method = sketch_upload_pool[0]
         del sketch_upload_pool[0]
-        room_path = 'game/rooms/' + room
-        print('processing sketch in ' + room_path)
-        if os.path.exists(room_path + '/sketch.improved.jpg'):
-            improved_sketch = cv2.imread(room_path + '/sketch.improved.jpg')
+        room_path = f'game/rooms/{room}'
+        print(f'processing sketch in {room_path}')
+        if os.path.exists(f'{room_path}/sketch.improved.jpg'):
+            improved_sketch = cv2.imread(f'{room_path}/sketch.improved.jpg')
             print('lucky to find improved sketch')
         else:
             improved_sketch = sketch.copy()
@@ -58,7 +58,7 @@ def handle_sketch_upload_pool():
             improved_sketch = cv_denoise(improved_sketch)
             improved_sketch = sensitive(improved_sketch, s=5.0)
             improved_sketch = go_tail(improved_sketch)
-            cv2.imwrite(room_path + '/sketch.improved.jpg', improved_sketch)
+            cv2.imwrite(f'{room_path}/sketch.improved.jpg', improved_sketch)
         color_sketch = improved_sketch.copy()
         std = cal_std(color_sketch)
         print('std = ' + str(std))
@@ -87,11 +87,19 @@ def handle_painting_pool():
     if len(painting_pool) > 0:
         room, ID, sketch, alpha, reference, points, method, lineColor, line = painting_pool[0]
         del painting_pool[0]
-        room_path = 'game/rooms/' + room
-        print('processing painting in ' + room_path)
+        room_path = f'game/rooms/{room}'
+        print(f'processing painting in {room_path}')
         sketch_1024 = k_resize(sketch, 64)
-        if os.path.exists(room_path + '/sketch.de_painting.jpg') and method == 'rendering':
-            vice_sketch_1024 = k_resize(cv2.imread(room_path + '/sketch.de_painting.jpg', cv2.IMREAD_GRAYSCALE), 64)
+        if (
+            os.path.exists(f'{room_path}/sketch.de_painting.jpg')
+            and method == 'rendering'
+        ):
+            vice_sketch_1024 = k_resize(
+                cv2.imread(
+                    f'{room_path}/sketch.de_painting.jpg', cv2.IMREAD_GRAYSCALE
+                ),
+                64,
+            )
             sketch_256 = mini_norm(k_resize(min_k_down(vice_sketch_1024, 2), 16))
             sketch_128 = hard_norm(sk_resize(min_k_down(vice_sketch_1024, 4), 32))
         else:
@@ -99,8 +107,8 @@ def handle_painting_pool():
             sketch_128 = hard_norm(sk_resize(min_k_down(sketch_1024, 4), 32))
         print('sketch prepared')
         if debugging:
-            cv2.imwrite(room_path + '/sketch.128.jpg', sketch_128)
-            cv2.imwrite(room_path + '/sketch.256.jpg', sketch_256)
+            cv2.imwrite(f'{room_path}/sketch.128.jpg', sketch_128)
+            cv2.imwrite(f'{room_path}/sketch.256.jpg', sketch_256)
         baby = go_baby(sketch_128, opreate_normal_hint(ini_hint(sketch_128), points, type=0, length=1))
         baby = de_line(baby, sketch_128)
         for _ in range(16):
@@ -108,18 +116,18 @@ def handle_painting_pool():
         baby = go_tail(baby)
         baby = clip_15(baby)
         if debugging:
-            cv2.imwrite(room_path + '/baby.' + ID + '.jpg', baby)
+            cv2.imwrite(f'{room_path}/baby.{ID}.jpg', baby)
         print('baby born')
         composition = go_gird(sketch=sketch_256, latent=d_resize(baby, sketch_256.shape), hint=ini_hint(sketch_256))
         if line:
             composition = emph_line(composition, d_resize(min_k_down(sketch_1024, 2), composition.shape), lineColor)
         composition = go_tail(composition)
-        cv2.imwrite(room_path + '/composition.' + ID + '.jpg', composition)
+        cv2.imwrite(f'{room_path}/composition.{ID}.jpg', composition)
         print('composition saved')
         painting_function = go_head
         if method == 'rendering':
             painting_function = go_neck
-        print('method: ' + method)
+        print(f'method: {method}')
         result = painting_function(
             sketch=sketch_1024,
             global_hint=k_resize(composition, 14),
@@ -128,10 +136,10 @@ def handle_painting_pool():
             alpha=(1 - alpha) if reference is not None else 1
         )
         result = go_tail(result)
-        cv2.imwrite(room_path + '/result.' + ID + '.jpg', result)
-        cv2.imwrite('results/' + room + '.' + ID + '.jpg', result)
+        cv2.imwrite(f'{room_path}/result.{ID}.jpg', result)
+        cv2.imwrite(f'results/{room}.{ID}.jpg', result)
         if debugging:
-            cv2.imwrite(room_path + '/icon.' + ID + '.jpg', max_resize(result, 128))
+            cv2.imwrite(f'{room_path}/icon.{ID}.jpg', max_resize(result, 128))
     return
 
 
@@ -141,29 +149,29 @@ def upload_sketch():
     previous_step = request.forms.get("step")
     if previous_step == 'sample':
         new_room_id = datetime.datetime.now().strftime('%b%dH%HM%MS%S') + 'R' + str(np.random.randint(100, 999))
-        shutil.copytree('game/samples/' + room, 'game/rooms/' + new_room_id)
+        shutil.copytree(f'game/samples/{room}', f'game/rooms/{new_room_id}')
         print('copy ' + 'game/samples/' + room + ' to ' + 'game/rooms/' + new_room_id)
         room = new_room_id
     ID = datetime.datetime.now().strftime('H%HM%MS%S')
     method = request.forms.get("method")
     if room == 'new':
         room = datetime.datetime.now().strftime('%b%dH%HM%MS%S') + 'R' + str(np.random.randint(100, 999))
-        room_path = 'game/rooms/' + room
+        room_path = f'game/rooms/{room}'
         os.makedirs(room_path, exist_ok=True)
         sketch = from_png_to_jpg(get_request_image('sketch'))
-        cv2.imwrite(room_path + '/sketch.original.jpg', sketch)
+        cv2.imwrite(f'{room_path}/sketch.original.jpg', sketch)
         print('original_sketch saved')
     else:
-        room_path = 'game/rooms/' + room
-        sketch = cv2.imread(room_path + '/sketch.original.jpg')
-    print('sketch upload pool get request: ' + method)
+        room_path = f'game/rooms/{room}'
+        sketch = cv2.imread(f'{room_path}/sketch.original.jpg')
+    print(f'sketch upload pool get request: {method}')
     sketch_upload_pool.append((room, sketch, method))
     while True:
         time.sleep(0.1)
-        if os.path.exists(room_path + '/sketch.' + method + '.jpg'):
+        if os.path.exists(f'{room_path}/sketch.{method}.jpg'):
             break
     time.sleep(1.0)
-    return room + '_' + ID
+    return f'{room}_{ID}'
 
 
 @route('/request_result', method='POST')
@@ -172,38 +180,38 @@ def request_result():
     previous_step = request.forms.get("step")
     if previous_step == 'sample':
         new_room_id = datetime.datetime.now().strftime('%b%dH%HM%MS%S') + 'R' + str(np.random.randint(100, 999))
-        shutil.copytree('game/samples/' + room, 'game/rooms/' + new_room_id)
+        shutil.copytree(f'game/samples/{room}', f'game/rooms/{new_room_id}')
         print('copy ' + 'game/samples/' + room + ' to ' + 'game/rooms/' + new_room_id)
         room = new_room_id
     ID = datetime.datetime.now().strftime('H%HM%MS%S')
-    room_path = 'game/rooms/' + room
+    room_path = f'game/rooms/{room}'
     options_str = request.forms.get("options")
     if debugging:
-        with open(room_path + '/options.' + ID + '.json', 'w') as f:
+        with open(f'{room_path}/options.{ID}.json', 'w') as f:
             f.write(options_str)
     options = json.loads(options_str)
     method = options["method"]
-    sketch = cv2.imread(room_path + '/sketch.' + method + '.jpg', cv2.IMREAD_GRAYSCALE)
+    sketch = cv2.imread(f'{room_path}/sketch.{method}.jpg', cv2.IMREAD_GRAYSCALE)
     alpha = float(options["alpha"])
     points = options["points"]
     for _ in range(len(points)):
         points[_][1] = 1 - points[_][1]
     if options["hasReference"]:
         reference = from_png_to_jpg(get_request_image('reference'))
-        cv2.imwrite(room_path + '/reference.' + ID + '.jpg', reference)
+        cv2.imwrite(f'{room_path}/reference.{ID}.jpg', reference)
         reference = s_enhance(reference)
     else:
         reference = None
-    print('request result room = ' + str(room) + ', ID = ' + str(ID))
+    print(f'request result room = {str(room)}, ID = {str(ID)}')
     lineColor = np.array(options["lineColor"])
     line = options["line"]
     painting_pool.append([room, ID, sketch, alpha, reference, points, method, lineColor, line])
     while True:
         time.sleep(0.1)
-        if os.path.exists(room_path + '/result.' + ID + '.jpg'):
+        if os.path.exists(f'{room_path}/result.{ID}.jpg'):
             break
     time.sleep(1.0)
-    return room + '_' + ID
+    return f'{room}_{ID}'
 
 
 @route('/get_sample_list', method='POST')
@@ -213,23 +221,25 @@ def get_sample_list():
         all_names = dirs
         break
     all_names.sort()
-    result = json.dumps(all_names)
-    return result
+    return json.dumps(all_names)
 
 
 @route('/save_as_sample', method='POST')
 def save_as_sample():
     room = request.forms.get("room")
     step = request.forms.get("step")
-    previous_path = 'game/rooms/' + room
-    new_path = 'game/samples/' + room
+    previous_path = f'game/rooms/{room}'
+    new_path = f'game/samples/{room}'
     os.makedirs(new_path, exist_ok=True)
 
     def transfer(previous_file_name, new_file_name=None):
         if new_file_name is None:
             new_file_name = previous_file_name
-        if os.path.exists(previous_path + '/' + previous_file_name):
-            shutil.copy(previous_path + '/' + previous_file_name, new_path + '/' + new_file_name)
+        if os.path.exists(f'{previous_path}/{previous_file_name}'):
+            shutil.copy(
+                f'{previous_path}/{previous_file_name}',
+                f'{new_path}/{new_file_name}',
+            )
 
     transfer('sketch.original.jpg')
     transfer('sketch.improved.jpg')
@@ -238,11 +248,11 @@ def save_as_sample():
     transfer('sketch.recolorization.jpg')
     transfer('sketch.de_painting.jpg')
 
-    transfer('result.' + step + '.jpg', 'result.sample.jpg')
-    transfer('reference.' + step + '.jpg', 'reference.sample.jpg')
-    transfer('icon.' + step + '.jpg', 'icon.sample.jpg')
-    transfer('composition.' + step + '.jpg', 'composition.sample.jpg')
-    transfer('options.' + step + '.json', 'options.sample.json')
+    transfer(f'result.{step}.jpg', 'result.sample.jpg')
+    transfer(f'reference.{step}.jpg', 'reference.sample.jpg')
+    transfer(f'icon.{step}.jpg', 'icon.sample.jpg')
+    transfer(f'composition.{step}.jpg', 'composition.sample.jpg')
+    transfer(f'options.{step}.json', 'options.sample.json')
 
     print('saved')
 

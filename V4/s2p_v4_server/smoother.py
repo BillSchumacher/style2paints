@@ -12,7 +12,7 @@ def layer(op):
         name = kwargs.setdefault('name', self.get_unique_name(op.__name__))
         # Figure out the layer inputs.
         if len(self.terminals) == 0:
-            raise RuntimeError('No input variables found for layer %s.' % name)
+            raise RuntimeError(f'No input variables found for layer {name}.')
         elif len(self.terminals) == 1:
             layer_input = self.terminals[0]
         else:
@@ -47,14 +47,14 @@ class Smoother(object):
         return '%s_%d' % (prefix, ident)
 
     def feed(self, *args):
-        assert len(args) != 0
+        assert args
         self.terminals = []
         for fed_layer in args:
             if isinstance(fed_layer, str):
                 try:
                     fed_layer = self.layers[fed_layer]
                 except KeyError:
-                    raise KeyError('Unknown layer name fed: %s' % fed_layer)
+                    raise KeyError(f'Unknown layer name fed: {fed_layer}')
             self.terminals.append(fed_layer)
         return self
 
@@ -71,8 +71,7 @@ class Smoother(object):
 
     def make_gauss_var(self, name, size, sigma, c_i):
         kernel = self.gauss_kernel(size, sigma, c_i)
-        var = tf.Variable(tf.convert_to_tensor(kernel), name=name)
-        return var
+        return tf.Variable(tf.convert_to_tensor(kernel), name=name)
 
     def get_output(self):
         '''Returns the smoother output.'''
@@ -91,5 +90,4 @@ class Smoother(object):
         with tf.variable_scope(name) as scope:
             kernel = self.make_gauss_var('gauss_weight', self.filter_size,
                                                          self.sigma, c_i)
-            output = convolve(input, kernel)
-            return output
+            return convolve(input, kernel)

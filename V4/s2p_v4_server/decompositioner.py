@@ -35,10 +35,13 @@ def simplify_points(points, img):
 
 
 def get_ini_layers(miku, points):
-    results = []
     final_target = miku.astype(np.float32)
     bg = np.zeros_like(final_target, dtype=np.float32) + points[0]
-    results.append(np.concatenate([bg, np.zeros_like(bg, dtype=np.float32) + 255], axis=2)[:, :, 0:4])
+    results = [
+        np.concatenate(
+            [bg, np.zeros_like(bg, dtype=np.float32) + 255], axis=2
+        )[:, :, 0:4]
+    ]
     current_result = bg.copy()
     for layer_index in range(1, ksd):
         current_base = current_result.astype(np.float32)
@@ -82,10 +85,7 @@ def cluster_all(labeled_array, num_features):
             i = labeled_array[x, y]
             xs[i].append(x)
             ys[i].append(y)
-    result = []
-    for _ in range(num_features):
-        result.append((np.array(xs[_]), np.array(ys[_])))
-    return result
+    return [(np.array(xs[_]), np.array(ys[_])) for _ in range(num_features)]
 
 
 def meder(x):
@@ -111,8 +111,7 @@ def re_med(s_2048):
     rec_256 = meder(sample_256)
     rec_512 = cv2.pyrUp(rec_256) + meder(gradient_512)
     rec_1024 = cv2.pyrUp(rec_512) + meder(gradient_1024)
-    rec_2048 = cv2.pyrUp(rec_1024) + meder(gradient_2048)
-    return rec_2048
+    return cv2.pyrUp(rec_1024) + meder(gradient_2048)
 
 
 def process_ctx(sketch, solid, render):
@@ -146,7 +145,7 @@ def process_psd(sketch, solid, render, path='./'):
     now = solid
     now = (now.astype(np.float32) + sketch.astype(np.float32) - 255.0).clip(0, 255)
     sketch = 255 + now - solid
-    cv2.imwrite(path + '9.sketch.png', sketch.clip(0, 255).astype(np.uint8))
+    cv2.imwrite(f'{path}9.sketch.png', sketch.clip(0, 255).astype(np.uint8))
     all_diff = recon.astype(np.float32) - now
     all_light = all_diff.copy()
     all_shadow = - all_diff.copy()
@@ -155,9 +154,12 @@ def process_psd(sketch, solid, render, path='./'):
     sketch_color = all_light * alpha
     light = all_light * (1 - alpha)
     all_shadow = 255 - all_shadow
-    cv2.imwrite(path + '10.sketch_color.png', sketch_color.clip(0, 255).astype(np.uint8))
-    cv2.imwrite(path + '11.light.png', light.clip(0, 255).astype(np.uint8))
-    cv2.imwrite(path + '12.shadow.png', all_shadow.clip(0, 255).astype(np.uint8))
+    cv2.imwrite(
+        f'{path}10.sketch_color.png',
+        sketch_color.clip(0, 255).astype(np.uint8),
+    )
+    cv2.imwrite(f'{path}11.light.png', light.clip(0, 255).astype(np.uint8))
+    cv2.imwrite(f'{path}12.shadow.png', all_shadow.clip(0, 255).astype(np.uint8))
     return recon
 
 

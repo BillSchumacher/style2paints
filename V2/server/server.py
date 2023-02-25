@@ -44,10 +44,10 @@ def do_paint():
         sketchDataURL = base64.urlsafe_b64decode(sketchDataURL)
         sketchDataURL = np.fromstring(sketchDataURL, dtype=np.uint8)
         sketchDataURL = cv2.imdecode(sketchDataURL, -1)
-        cv2.imwrite('record/' + dstr + '.sketch.png', sketchDataURL)
+        cv2.imwrite(f'record/{dstr}.sketch.png', sketchDataURL)
     else:
         dstr = sketchID
-        sketchDataURL = cv2.imread('record/' + dstr + '.sketch.png', cv2.IMREAD_UNCHANGED)
+        sketchDataURL = cv2.imread(f'record/{dstr}.sketch.png', cv2.IMREAD_UNCHANGED)
 
     referenceID = request.forms.get("referenceID")
 
@@ -58,12 +58,15 @@ def do_paint():
         referenceDataURL = np.fromstring(referenceDataURL, dtype=np.uint8)
         referenceDataURL = cv2.imdecode(referenceDataURL, -1)
         referenceID = str(np.random.randint(100, 999))
-        cv2.imwrite('record/' + dstr + '_' + referenceID + '.reference.png', referenceDataURL)
+        cv2.imwrite(f'record/{dstr}_{referenceID}.reference.png', referenceDataURL)
     else:
         if referenceID == 'no':
             referenceDataURL = None
         else:
-            referenceDataURL = cv2.imread('record/' + dstr + '_' + referenceID + '.reference.png', cv2.IMREAD_UNCHANGED)
+            referenceDataURL = cv2.imread(
+                f'record/{dstr}_{referenceID}.reference.png',
+                cv2.IMREAD_UNCHANGED,
+            )
 
     hintDataURL = request.forms.get("hint")
     hintDataURL = re.sub('^data:image/.+;base64,', '', hintDataURL)
@@ -71,7 +74,7 @@ def do_paint():
     hintDataURL = np.fromstring(hintDataURL, dtype=np.uint8)
     hintDataURL = cv2.imdecode(hintDataURL, -1)
     hstr = str(np.random.randint(100, 999))
-    cv2.imwrite('record/' + dstr + '_' + hstr + '.hint.png', hintDataURL)
+    cv2.imwrite(f'record/{dstr}' + '_' + hstr + '.hint.png', hintDataURL)
 
     sketchDenoise = request.forms.get("sketchDenoise")
     resultDenoise = request.forms.get("resultDenoise")
@@ -105,19 +108,19 @@ def do_paint():
         sketch = cv2.imread(norm_path, cv2.IMREAD_GRAYSCALE)
     else:
         if sketchDenoise == 'false':
-            if algrithom == 'stability':
-                sketch = cv_denoise(k_resize(sketch, 48))
-            else:
-                sketch = cv_denoise(k_resize(sketch, 64))
+            sketch = (
+                cv_denoise(k_resize(sketch, 48))
+                if algrithom == 'stability'
+                else cv_denoise(k_resize(sketch, 64))
+            )
+        elif algrithom == 'stability':
+            sketch = m_resize(sketch, min(sketch.shape[0], sketch.shape[1], 512))
+            sketch = go_tail(sketch, noisy=True)
+            sketch = k_resize(sketch, 48)
         else:
-            if algrithom == 'stability':
-                sketch = m_resize(sketch, min(sketch.shape[0], sketch.shape[1], 512))
-                sketch = go_tail(sketch, noisy=True)
-                sketch = k_resize(sketch, 48)
-            else:
-                sketch = m_resize(sketch, min(sketch.shape[0], sketch.shape[1], 768))
-                sketch = go_tail(sketch, noisy=True)
-                sketch = k_resize(sketch, 64)
+            sketch = m_resize(sketch, min(sketch.shape[0], sketch.shape[1], 768))
+            sketch = go_tail(sketch, noisy=True)
+            sketch = k_resize(sketch, 64)
         if method == 'transfer':
             sketch = go_line(sketch)
         else:

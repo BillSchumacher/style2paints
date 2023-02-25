@@ -16,8 +16,7 @@ def GuidedFiltF(img, r):
     b = mean_I - (a * mean_I)
     mean_a = cv2.boxFilter(a, -1, ((2 * r) + 1, (2 * r) + 1))
     mean_b = cv2.boxFilter(b, -1, ((2 * r) + 1, (2 * r) + 1))
-    q = (mean_a * I) + mean_b
-    return q
+    return (mean_a * I) + mean_b
 
 
 def ComputeLightDirectionMat(Xpos, Ypos, Zpos, IndexMat3D):
@@ -34,8 +33,8 @@ def ComputeLightDirectionMat(Xpos, Ypos, Zpos, IndexMat3D):
 
 def CreateIndexMat(height, width):
     ind = np.zeros((height, width, 3))
-    for j in range(0, height):
-        for i in range(0, width):
+    for j in range(height):
+        for i in range(width):
             ind[j, i, 0] = 0
             ind[j, i, 1] = j
             ind[j, i, 2] = i
@@ -115,6 +114,5 @@ def small_render(imgN, Mask, color, s1024, r, g, b, h, left, top):
     color64[:, :, 0] = np.minimum(255.0, color64[:, :, 0] * amb * b + Plight * color64[:, :, 0] * dstImage * b + Plight * b * 1.58 * ks * RspecB * FresnelB)
     color64[:, :, 1] = np.minimum(255.0, color64[:, :, 1] * amb * g + Plight * color64[:, :, 1] * dstImage * g + Plight * g * 1.50 * ks * RspecG * FresnelG)
     color64[:, :, 2] = np.minimum(255.0, color64[:, :, 2] * amb * r + Plight * color64[:, :, 2] * dstImage * r + Plight * r * 1.35 * ks * RspecR * FresnelR)
-    final = color64.astype(np.dtype('uint8'))
-    return final
+    return color64.astype(np.dtype('uint8'))
 

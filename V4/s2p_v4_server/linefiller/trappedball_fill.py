@@ -94,7 +94,7 @@ def trapped_ball_fill_multi(image, radius, method='mean', max_iter=1000):
     # Returns
         an array of fills' points.
     """
-    print('trapped-ball ' + str(radius))
+    print(f'trapped-ball {str(radius)}')
 
     unfill_area = image
     filled_area, filled_area_size, result = [], [], []
@@ -102,7 +102,7 @@ def trapped_ball_fill_multi(image, radius, method='mean', max_iter=1000):
     for _ in range(max_iter):
         points = get_unfilled_point(exclude_area(unfill_area, radius))
 
-        if not len(points) > 0:
+        if len(points) <= 0:
             break
 
         fill = trapped_ball_fill_single(unfill_area, (points[0][0], points[0][1]), radius)
@@ -124,9 +124,7 @@ def trapped_ball_fill_multi(image, radius, method='mean', max_iter=1000):
 
     result_idx = np.where(filled_area_size >= area_size_filter)[0]
 
-    for i in result_idx:
-        result.append(filled_area[i])
-
+    result.extend(filled_area[i] for i in result_idx)
     return result
 
 
@@ -185,12 +183,9 @@ def find_all(labeled_array):
     count_all(labeled_array, all_counts)
     xs = [np.zeros(shape=(item, ), dtype=np.uint32) for item in all_counts]
     ys = [np.zeros(shape=(item, ), dtype=np.uint32) for item in all_counts]
-    cs = [0 for item in all_counts]
+    cs = [0 for _ in all_counts]
     trace_all(labeled_array, xs, ys, cs)
-    filled_area = []
-    for _ in range(hist_size):
-        filled_area.append((xs[_], ys[_]))
-    return filled_area
+    return [(xs[_], ys[_]) for _ in range(hist_size)]
 
 
 def flood_fill_multi(image, merge=False):
@@ -204,12 +199,7 @@ def flood_fill_multi(image, merge=False):
     print('floodfill_ok2')
 
     if merge:
-        new_fill = []
-        for item in filled_area:
-            if len(item[0]) > 8:
-                new_fill.append(item)
-        return new_fill
-
+        return [item for item in filled_area if len(item[0]) > 8]
     print('floodfill_ok3')
 
     return filled_area
@@ -234,7 +224,7 @@ def old_flood_fill_multi(image, max_iter=20000):
     for _ in range(max_iter):
         points = get_unfilled_point(unfill_area)
 
-        if not len(points) > 0:
+        if len(points) <= 0:
             break
 
         fill = flood_fill_single(unfill_area, (points[0][0], points[0][1]))
@@ -326,10 +316,10 @@ def get_border_bounding_rect(h, w, p1, p2, r):
     """
     x1, y1, x2, y2 = p1[0], p1[1], p2[0], p2[1]
 
-    x1 = x1 - r if 0 < x1 - r else 0
-    y1 = y1 - r if 0 < y1 - r else 0
-    x2 = x2 + r + 1 if x2 + r + 1 < w else w
-    y2 = y2 + r + 1 if y2 + r + 1 < h else h
+    x1 = max(x1 - r, 0)
+    y1 = max(y1 - r, 0)
+    x2 = min(x2 + r + 1, w)
+    y2 = min(y2 + r + 1, h)
 
     return x1, y1, x2, y2
 
@@ -382,7 +372,7 @@ def merge_fill(fillmap, max_iter=20):
     result = fillmap.copy()
 
     for i in range(max_iter):
-        print('merge ' + str(i + 1))
+        print(f'merge {str(i + 1)}')
 
         result[np.where(fillmap == 0)] = 0
 
